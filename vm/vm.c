@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../uthash/include/utlist.h"
+
 #include "vm.h"
 
 MEM_P memory;
 bool debug;
 int pc;
+element *head = NULL;
 
 int init_vm(bool dbg) {
     memory = (MEM_P)(malloc(sizeof(DT)*MAX_MEMORY));
@@ -59,7 +62,7 @@ int load_memory(FILE* file) {
     return 0;
     }
 
-DT deref(int idx) {
+int deref(int idx) {
     if (memory[idx] > 32767) {
         return memory[memory[idx]];
     }
@@ -67,29 +70,42 @@ DT deref(int idx) {
     return memory[idx];
 }
 
+void reg_or_memset(int pc, int value) {
+    if (memory[pc] > 32767) {
+        memory[memory[pc]] = value;
+    } else {
+        memory[pc] = value;
+    }
+}
+
 int start_vm() {
     while (1) {
-        //printf("Got opcode: %i\n", memory[0]);
-
         DT opcode = memory[pc];
         pc++;  // instruction
         int idx = 0;
         int result;
+        element *item;
         switch (opcode) {
             case 0:     // halt
                 printf("\nHALT\n");
                 exit(0);
             case 1:     // set a b
                 idx = 2;
-                memory[memory[pc]] = memory[pc+1];
+                memory[memory[pc]] = deref(pc+1);
                 break;
             case 2:     // push a
-                // TODO: push to stack
                 idx = 1;
+                item = malloc(sizeof(element));
+                item->value = deref(pc);
+                DL_APPEND(head, item);
+                // printf("Pushing %i\n", head->prev->value);
                 break;
             case 3:     // pop a
-                // TODO: pop from stack
                 idx = 1;
+                item = head->prev;
+                reg_or_memset(pc, item->value);
+                DL_DELETE(head, item);
+                free(item);
                 break;
             case 4:     // eq a b c
                 idx = 3;
@@ -97,44 +113,95 @@ int start_vm() {
                 if (deref(pc+1) == deref(pc+2)) {
                     result = 1;
                 }
-                if (memory[pc] > 32767) {
-                    memory[memory[pc]] = result;
-                } else {
-                    memory[pc] = result;
+                reg_or_memset(pc, result);
+                break;
+            case 5:     // gt a b c
+                idx = 3;
+                result = 0;
+                if (deref(pc+1) > deref(pc+2)) {
+                    result = 1;
                 }
+                reg_or_memset(pc, result);
                 break;
             case 6:     // jmp a
                 pc = deref(pc);
                 //printf("JMP to %i\n", memory[pc]);
                 break;
             case 7:     // jt a b
-                idx = 2;
                 if (deref(pc)) {
-                    idx = 0;
                     //printf("JT to %i (%i)\n", memory[pc+1], memory[pc]);
                     pc = deref(pc+1);
+                } else {
+                    idx = 2;
                 }
                 break;
             case 8:     // jf a b
-                idx = 2;
-                if (!deref(pc)) {
-                    idx = 0;
+                if (deref(pc) == 0) {
                     //printf("JF to %i (%i)\n", memory[pc+1], pc+1);
                     pc = deref(pc+1);
+                } else {
+                    idx = 2;
                 }
                 break;
             case 9:     // add a b c
                 idx = 3;
-                result = (deref(pc+1) + deref(pc+2)) % 32768;
-                if (memory[pc] > 32767) {
-                    memory[memory[pc]] = result;
-                } else {
-                    memory[pc] = result;
+                reg_or_memset(pc, (deref(pc+1) + deref(pc+2)) % 32768);
+                break;
+            case 10:    // mult a b c
+                idx = 3;
+                reg_or_memset(pc, (deref(pc+1) * deref(pc+2)) % 32768);
+                break;
+            case 11:    // mod a b c
+                idx = 3;
+                reg_or_memset(pc, deref(pc+1) % deref(pc+2));
+                break;
+            case 12:    // and a b c
+                idx = 3;
+                reg_or_memset(pc, deref(pc+1) & deref(pc+2));
+                break;
+            case 13:    // or a b c
+                idx = 3;
+                reg_or_memset(pc, deref(pc+1) | deref(pc+2));
+                break;
+            case 14:    // not a b
+                idx = 2;
+                //printf("15-bit not of %i => %i, into %i\n", deref(pc+1), 32767-deref(pc+1), pc);
+                reg_or_memset(pc, 32767 - deref(pc+1));
+                break;
+            case 15:    // rmem a b
+                idx = 2;
+                //printf("Reading location %i and writing to %i\n", deref(pc+1), deref(pc));
+                reg_or_memset(pc, memory[deref(pc+1)]);
+                break;
+            case 16:    // wmem a b
+                idx = 2;
+                reg_or_memset(deref(pc), deref(pc+1));
+                break;
+            case 17:    // call a
+                item = malloc(sizeof(element));
+                item->value = pc + 1;
+                //printf("Call return: %i\n", pc + 1);
+                DL_APPEND(head, item);
+                //printf("Old PC:  %i New PC: %i\n", pc, deref(pc));
+                pc = deref(pc);
+                break;
+            case 18:    // ret
+                if (!head) {
+                    printf("RET failed on empty stack\n");
+                    exit(0);
                 }
+                item = head->prev;
+                pc = item->value;
+                DL_DELETE(head, item);
+                free(item);
                 break;
             case 19:    // out a
-                printf("%c", deref(pc));
                 idx = 1;
+                printf("%c", deref(pc));
+                break;
+            case 20:    // in
+                idx = 1;
+                reg_or_memset(pc, getchar());
                 break;
             case 21:    // noop
                 break;

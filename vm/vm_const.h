@@ -6,3 +6,10 @@
 
 #define DT unsigned short
 #define MEM_P DT*
+
+typedef struct element {
+    DT value;
+    struct element *next;
+    struct element *prev;
+} element;
+
