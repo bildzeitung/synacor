@@ -13,6 +13,7 @@ MEM_P memory;
 bool debug;
 int pc;
 element *head = NULL;
+int selfcheckflag = 0;
 
 int init_vm(bool dbg) {
     memory = (MEM_P)(malloc(sizeof(DT)*MAX_MEMORY));
@@ -63,6 +64,16 @@ int load_memory(FILE* file) {
 
 int deref(int idx) {
     if (memory[idx] > 32767) {
+        // Figure out when register 8 (teleportation register) is being
+        // referenced by some (any) operation
+        if (memory[idx] == 32775) {
+            if (selfcheckflag) {
+                printf("PROGRAM COUNTER: %i\n", pc);
+            } else {
+                // skip the first time, since that's the self-check
+                selfcheckflag = 1;
+            }
+        }
         return memory[memory[idx]];
     }
 
