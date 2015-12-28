@@ -19,6 +19,7 @@ static struct argp_option options[] = {
 
 struct arguments {
     FILE* image;
+    FILE* script;
     bool debug;
 };
 
@@ -36,6 +37,13 @@ parse_opt(int key, char *arg, struct argp_state *state) {
                     arguments->image = fopen(arg, "rb");
                     if (!arguments->image) {
                         perror("Could not open image");
+                        return errno;
+                    }
+                    break;
+                case 1:
+                    arguments->script = fopen(arg, "rb");
+                    if (!arguments->script) {
+                        perror("Could not open script file");
                         return errno;
                     }
                     break;
@@ -62,6 +70,7 @@ int main(int argc, char** argv) {
 
     // defaults
     arguments.debug = false;
+    arguments.script = NULL;
 
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return 1;
 
@@ -76,5 +85,5 @@ int main(int argc, char** argv) {
 
     fclose(arguments.image);
 
-    return start_vm();
+    return start_vm(arguments.script);
 }

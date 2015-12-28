@@ -77,13 +77,22 @@ void reg_or_memset(int pc, int value) {
     }
 }
 
-int start_vm() {
+/** Run the VM
+ *
+ * if the user has specified a script file, then feed that in while it lasts
+ * into the 'in' operation
+ */
+int start_vm(FILE* inscript) {
     while (1) {
+        // instruction
         DT opcode = memory[pc];
-        pc++;  // instruction
+        pc++;
+
+        // temporaries
         int idx = 0;
         int result;
         element *item;
+
         switch (opcode) {
             case 0:     // halt
                 printf("\nHALT\n");
@@ -196,7 +205,17 @@ int start_vm() {
                 break;
             case 20:    // in
                 idx = 1;
-                reg_or_memset(pc, getchar());
+                if (inscript && !feof(inscript)) {
+                    result = fgetc(inscript);
+                    if (result == EOF) {
+                        fclose(inscript);
+                        inscript = NULL;
+                        result = getchar();
+                    }
+                    reg_or_memset(pc, result);
+                } else {
+                    reg_or_memset(pc, getchar());
+                }
                 break;
             case 21:    // noop
                 break;
