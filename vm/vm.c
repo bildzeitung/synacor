@@ -35,7 +35,6 @@ int load_memory(FILE* file) {
     fseek(file, 0, SEEK_END);
     size_t sz = ftell(file);
 
-    sz = (sz > 32767) ? 32767 : sz;
     printf("Loading image of size %zu\n", sz);
     
     if (sz > MAX_MEMORY) {
@@ -98,10 +97,13 @@ int start_vm() {
                 item = malloc(sizeof(element));
                 item->value = deref(pc);
                 DL_APPEND(head, item);
-                // printf("Pushing %i\n", head->prev->value);
                 break;
             case 3:     // pop a
                 idx = 1;
+                if (!head) {
+                    printf("Cannot pop an empty stack\n");
+                    exit(1);
+                }
                 item = head->prev;
                 reg_or_memset(pc, item->value);
                 DL_DELETE(head, item);
@@ -125,11 +127,9 @@ int start_vm() {
                 break;
             case 6:     // jmp a
                 pc = deref(pc);
-                //printf("JMP to %i\n", memory[pc]);
                 break;
             case 7:     // jt a b
                 if (deref(pc)) {
-                    //printf("JT to %i (%i)\n", memory[pc+1], memory[pc]);
                     pc = deref(pc+1);
                 } else {
                     idx = 2;
@@ -137,7 +137,6 @@ int start_vm() {
                 break;
             case 8:     // jf a b
                 if (deref(pc) == 0) {
-                    //printf("JF to %i (%i)\n", memory[pc+1], pc+1);
                     pc = deref(pc+1);
                 } else {
                     idx = 2;
@@ -165,12 +164,10 @@ int start_vm() {
                 break;
             case 14:    // not a b
                 idx = 2;
-                //printf("15-bit not of %i => %i, into %i\n", deref(pc+1), 32767-deref(pc+1), pc);
                 reg_or_memset(pc, 32767 - deref(pc+1));
                 break;
             case 15:    // rmem a b
                 idx = 2;
-                //printf("Reading location %i and writing to %i\n", deref(pc+1), deref(pc));
                 reg_or_memset(pc, memory[deref(pc+1)]);
                 break;
             case 16:    // wmem a b
@@ -180,9 +177,7 @@ int start_vm() {
             case 17:    // call a
                 item = malloc(sizeof(element));
                 item->value = pc + 1;
-                //printf("Call return: %i\n", pc + 1);
                 DL_APPEND(head, item);
-                //printf("Old PC:  %i New PC: %i\n", pc, deref(pc));
                 pc = deref(pc);
                 break;
             case 18:    // ret
@@ -197,7 +192,7 @@ int start_vm() {
                 break;
             case 19:    // out a
                 idx = 1;
-                printf("%c", deref(pc));
+                putchar(deref(pc));
                 break;
             case 20:    // in
                 idx = 1;
