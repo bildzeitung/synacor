@@ -8,12 +8,14 @@
 #include "../uthash/include/utlist.h"
 
 #include "vm.h"
+#include "machine.h"
 
 MEM_P memory;
 bool debug;
 int pc;
 element *head = NULL;
 int selfcheckflag = 0;
+int breakpoint = 5451;
 
 int init_vm(bool dbg) {
     memory = (MEM_P)(malloc(sizeof(DT)*MAX_MEMORY));
@@ -62,42 +64,90 @@ int load_memory(FILE* file) {
     return 0;
     }
 
-int deref(int idx) {
-    if (memory[idx] > 32767) {
-        if (memory[idx] == 32775) {
-            if (selfcheckflag) {
-                memory[32775] = 0;
+int print_instructions(int start, int numinstr) {
+    char spacer;
+    char bp;
+
+    for (int i=0 ; i < numinstr; i++) {
+        spacer = (start == pc) ? '>' : ' ';
+        bp = (breakpoint == start) ? '*' : ' ';
+        printf("%c%c %5d ", spacer, bp, start);
+
+        int opcode = memory[start++];
+        if (opcode > 21) {
+            printf("%i ??\n", opcode);
+            continue;
+        }
+        if (opcode == 19) {
+            int value = memory[start];
+            if (value > 32767 && value < 32776) {
+                printf("%4s reg[%i]\n", OPLIST[opcode].op, value - 32768);
             } else {
-                selfcheckflag = 1;
+                printf("%4s %c\n", OPLIST[opcode].op, value);
+            }
+            start++;
+            continue;
+        }
+
+        printf("%4s ", OPLIST[opcode].op);
+        for (int j=0; j < OPLIST[opcode].instrs; j++) {
+            int value = memory[start++];
+            if (value > 32767 && value < 32776) {
+                printf("reg[%i] ", value - 32768);
+            } else {
+                printf("%i ", value);
             }
         }
-        // Figure out when register 8 (teleportation register) is being
-        // referenced by some (any) operation
-        /*
-        if (memory[idx] == 32775) {
-            if (selfcheckflag) {
-                printf("PROGRAM COUNTER: %i\n", pc);
-                for (int i = pc-10 ; i < pc+30; i++) {
-                    printf("%i\n", memory[i]);
-                }
-                for (int i = pc+1 ; i < MAX_MEMORY ; i++) {
-                    if (memory[i] == 32775) {
-                        printf("HIT AT %i\n", i);
-                        for (int j = i - 10 ; j < i + 30; j++) {
-                            printf("%i\n", memory[j]);
-                        }
-                    }
-                }
-            } else {
-                // skip the first time, since that's the self-check
-                selfcheckflag = 1;
-            }
-        }
-        */
-        return memory[memory[idx]];
+        printf("\n");
     }
 
-    return memory[idx];
+    return start;
+}
+
+void debugger() {
+    int debugpc = print_instructions(pc, 10);
+    int done = 0;
+
+    while (!done) {
+        char op;
+        int param, reg;
+
+        printf("> ");
+        // cmd
+        scanf("%c", &op);
+        switch (op) {
+            case 'x':  // exit
+                done = 1;
+                break;
+            case 'd':  // detail
+                scanf("%i", &param);
+                printf("%i %i\n", param, memory[param]);
+                break;
+            case 'g':  // go
+                scanf("%i", &debugpc);
+            case 'c':  // continue
+                debugpc = print_instructions(debugpc, 10);
+                break;
+            case 'r':  // register
+                for (int i=0; i < 8; i++)
+                    printf("reg[%i]: %i\n", i, memory[32768+i]);
+                break;
+            case 'b':  // breakpoint
+                scanf("%i", &breakpoint);
+                break;
+            case 's':  // set register
+                scanf("%i %i", &reg, &param);
+                memory[32768+reg] = param;
+                break;
+            default:
+                continue;
+        }
+        getchar();
+    }
+}
+
+int deref(int idx) {
+    return (memory[idx] > 32767) ? memory[memory[idx]] : memory[idx];
 }
 
 void reg_or_memset(int pc, int value) {
@@ -115,6 +165,8 @@ void reg_or_memset(int pc, int value) {
  */
 int start_vm(FILE* inscript) {
     while (1) {
+        if (pc == breakpoint) debugger();
+
         // instruction
         DT opcode = memory[pc];
         pc++;
@@ -242,6 +294,8 @@ int start_vm(FILE* inscript) {
                         fclose(inscript);
                         inscript = NULL;
                         result = getchar();
+                    } else {
+                        putchar(result);
                     }
                     reg_or_memset(pc, result);
                 } else {
