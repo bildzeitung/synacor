@@ -43,3 +43,14 @@ My reading is that it's a decoding of some other block of memory to output this:
     "Unusual setting detected!  Starting confirmation process!  Estimated time to completion: 1 billion years."
 
 Setting a breakpoint after this routine returns confirms at least the output part of that. After a number of NOPs, the real work appears to begin at *5483*.
+
+## Debugger
+To facilitate exploring the VM, the debugger has the following functions:
+
+* *exit*: continue running the VM
+* *detail*: inspect a single memory location
+* *goto*: jump to a section of memory and print out disassembled instructions
+* *continue*: print out the next few instructions
+* *register*: dump contents of all registers
+* *breakpoint*: set a breakpoint (initial setting is *5451*)
+* *set*: set register to a given value
