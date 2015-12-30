@@ -64,16 +64,36 @@ int load_memory(FILE* file) {
 
 int deref(int idx) {
     if (memory[idx] > 32767) {
+        if (memory[idx] == 32775) {
+            if (selfcheckflag) {
+                memory[32775] = 0;
+            } else {
+                selfcheckflag = 1;
+            }
+        }
         // Figure out when register 8 (teleportation register) is being
         // referenced by some (any) operation
+        /*
         if (memory[idx] == 32775) {
             if (selfcheckflag) {
                 printf("PROGRAM COUNTER: %i\n", pc);
+                for (int i = pc-10 ; i < pc+30; i++) {
+                    printf("%i\n", memory[i]);
+                }
+                for (int i = pc+1 ; i < MAX_MEMORY ; i++) {
+                    if (memory[i] == 32775) {
+                        printf("HIT AT %i\n", i);
+                        for (int j = i - 10 ; j < i + 30; j++) {
+                            printf("%i\n", memory[j]);
+                        }
+                    }
+                }
             } else {
                 // skip the first time, since that's the self-check
                 selfcheckflag = 1;
             }
         }
+        */
         return memory[memory[idx]];
     }
 
