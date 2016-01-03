@@ -42,7 +42,36 @@ My reading is that it's a decoding of some other block of memory to output this:
 
     "Unusual setting detected!  Starting confirmation process!  Estimated time to completion: 1 billion years."
 
-Setting a breakpoint after this routine returns confirms at least the output part of that. After a number of NOPs, the real work appears to begin at *5483*.
+Setting a breakpoint after this routine returns confirms at least the output part of that. After a number of NOPs, the real work appears to begin at *5483*:
+
+    5483  set reg[0] 4
+    5486  set reg[1] 1
+    5489 call 6027
+    5491   eq reg[1] reg[0] 6
+    5495   jf reg[1] 5579
+
+The initial values to the function are in registers zero and one. The subroutine that is doing the checking is:
+
+    6027   jt reg[0] 6035
+    6030  add reg[0] reg[1] 1
+    6034  ret
+    6035   jt reg[1] 6048
+    6038  add reg[0] reg[0] 32767
+    6042  set reg[1] reg[7]
+    6045 call 6027
+    6047  ret
+    6048 push reg[0]
+    6050  add reg[1] reg[1] 32767
+    6054 call 6027
+    6056  set reg[1] reg[0]
+    6059  pop reg[0]
+    6061  add reg[0] reg[0] 32767
+    6065 call 6027
+    6067  ret
+
+With that routine isolated, it's taken me far too long to realise that it's an implementation of Ackermann's function, *A(m, n)*, where *m* is *r0* and *n* is *r7*. The [Wikipedia entry][ackermann] has a table for *m=4*, and it's two to the power *(n+3)* - 3. The bonus here is that the math is 15-bit, so it's actually a modular exponentiation calculation.
+
+The goal seems to be to determine a value for *A(4, n)* where the output is *6* (after the modulus). Since Ackermann remapped under a modulus eventually stabilises for most values (except, oddly, 1969), I'm hoping that there's a (correct) value that I can hit before then.
 
 ## Debugger
 To facilitate exploring the VM, the debugger has the following functions:
@@ -54,3 +83,5 @@ To facilitate exploring the VM, the debugger has the following functions:
 * *register*: dump contents of all registers
 * *breakpoint*: set a breakpoint (initial setting is *5451*)
 * *set*: set register to a given value
+
+[ackermann]:https://en.wikipedia.org/wiki/Ackermann_function 
