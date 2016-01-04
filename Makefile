@@ -11,14 +11,17 @@ LDFLAGS=-largp
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-all: $(OUTDIR)/vm
+all: $(OUTDIR)/vm $(OUTDIR)/ackermann
 
 $(OUTDIR):
 	mkdir $@ &> /dev/null || true
 
-$(OUTDIR)/vm:: $(OUTDIR)
+$(OUTDIR)/vm $(OUTDIR)/ackermann:: $(OUTDIR)
 
-$(OUTDIR)/vm:: vm/vm.c vm/main.o
+$(OUTDIR)/vm:: vm/vm.o vm/main.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+$(OUTDIR)/ackermann:: vm/ackermann.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 clean:

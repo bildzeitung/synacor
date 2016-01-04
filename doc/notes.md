@@ -73,6 +73,25 @@ With that routine isolated, it's taken me far too long to realise that it's an i
 
 The goal seems to be to determine a value for *A(4, n)* where the output is *6* (after the modulus). Since Ackermann remapped under a modulus eventually stabilises for most values (except, oddly, 1969), I'm hoping that there's a (correct) value that I can hit before then.
 
+Ok, the goal is *not* that. A careful reading of the code reveals that:
+* we are dealing with an Ackermann _mod-n_ variant, so we max out the recursion at 32768
+* meaning that we can memoize all sorts of results, and the max size of the table is reasonable
+* traslating the assembly above: r0 == m, and r1 == n
+* so that leaves r7 as ... what, exactly?
+* in the m &gt; 1, n == 0 case, n is being set to r7, instead of its usual 1
+* this means that we're always calculating the same Ackermann function: A(4, 1)
+* but, the algorithm in one part of the three cases is non-standard -- at line *6042*
+
+The goal is to find an r7 such that *A(4, 1)* == 6.
+
+To figure that out, I wrote a more standard-form Ackermann function, with memoization, that steps though all values from [0, 32768]. There is only one result, and it is when *r7 == 25734*.
+
+The sequence of operations is:
+* break before the call to 6027 is made
+* set r0 = 6, r7 = 25734
+* reset the program counter to 5491 (the line after the call to 6027)
+* resume execution
+
 ## Debugger
 To facilitate exploring the VM, the debugger has the following functions:
 

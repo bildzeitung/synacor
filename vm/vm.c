@@ -104,6 +104,12 @@ int print_instructions(int start, int numinstr) {
     return start;
 }
 
+void print_stack_dump() {
+    element* elt;
+    int c = 0;
+    DL_FOREACH(head,elt) printf("%3d: %u\n", c++, elt->value);
+}
+
 void debugger() {
     int debugpc = print_instructions(pc, 10);
     int done = 0;
@@ -138,6 +144,12 @@ void debugger() {
             case 's':  // set register
                 scanf("%i %i", &reg, &param);
                 memory[32768+reg] = param;
+                break;
+            case 't':  // stack dump
+                print_stack_dump();
+                break;
+            case 'p':  // set pc
+                scanf("%i", &pc);
                 break;
             default:
                 continue;
