@@ -1,6 +1,6 @@
 /* Synacor challenge
  *
- * mod-n Ackermann Calculator
+ * mod-n (almost) Ackermann Calculator
  */
 #include <stdio.h>
 #include <string.h>
@@ -25,7 +25,7 @@ int ackermann(int m, int n) {
     }
 
     if (!n) {
-        memo[m][n] = ackermann(m-1, z);
+        memo[m][n] = ackermann(m-1, z); // <-- Ackermann has z == 1
         return memo[m][n];
     }
 
@@ -38,8 +38,7 @@ int ackermann(int m, int n) {
 int main(int argc __attribute__((unused)), char** argv __attribute__((unused))) {
     for (z=1; z < MOD_N; z++) {
         memset(memo, -1, sizeof(int) * (M+1) * MOD_N);
-        int result = ackermann(M, N);
-        if (result == 6) {
+        if (ackermann(M, N) == 6) {
             printf("R7: %d\n", z);
             break;
         }
