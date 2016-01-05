@@ -103,4 +103,16 @@ To facilitate exploring the VM, the debugger has the following functions:
 * *breakpoint*: set a breakpoint (initial setting is *5451*)
 * *set*: set register to a given value
 
+## Floor puzzle
+This is manageable by hand, I imagine, but I'm lazy, so I implemented a breadth-first search for it, since the shortest solution is required -- not just any solution.
+
+Tweaks include:
+* memoization of state so as to not revisit the same location with the same total (any solution past that would be longer than optimal); this solves the performance problem, for the most part
+* revisiting the start location resets the puzzle, so weight it with 0
+* entering the vault location resets the puzzle if the solution is incorrect, so any solution must both end there and not revisit the spot
+
+At the end, the solution is 12 moves long.
+
+The final code is mirror-reversed, but largely made up of symmetrical letters, except for a 'p', which becomes a 'q'.
+
 [ackermann]:https://en.wikipedia.org/wiki/Ackermann_function 
