@@ -14,8 +14,21 @@ MEM_P memory;
 bool debug;
 int pc;
 element *head = NULL;
-int selfcheckflag = 0;
 int breakpoint = 5451;
+
+/** Dynamically patch the uncompressed VM so that the teleport section
+ *  is bypassed (bonus points: the challenge code is also correct, too)
+ */
+void patch_for_teleport() {
+    memory[5451] = 21; // remove comparison for reg[7]
+    memory[5452] = 21; //   "        "       "    "
+    memory[5453] = 21; //   "        "       "    "
+    memory[5485] = 6; // reg[0] = 6
+    memory[5487] = 32775; // reg[7] = 25734
+    memory[5488] = 25734; //   "        "
+    memory[5489] = 21; // do not call Ackermann
+    memory[5490] = 21; // "   "    "      "
+}
 
 int init_vm(bool dbg) {
     memory = (MEM_P)(malloc(sizeof(DT)*MAX_MEMORY));
@@ -177,7 +190,8 @@ void reg_or_memset(int pc, int value) {
  */
 int start_vm(FILE* inscript) {
     while (1) {
-        if (pc == breakpoint) debugger();
+        // patch for teleport
+        if (pc == breakpoint) patch_for_teleport();
 
         // instruction
         DT opcode = memory[pc];
