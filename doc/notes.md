@@ -73,18 +73,19 @@ With that routine isolated, it's taken me far too long to realise that it's an i
 
 The goal seems to be to determine a value for *A(4, n)* where the output is *6* (after the modulus). Since Ackermann remapped under a modulus eventually stabilises for most values (except, oddly, 1969), I'm hoping that there's a (correct) value that I can hit before then.
 
-Ok, the goal is *not* that. A careful reading of the code reveals that:
+Ok, the goal is *not* that at all. A careful reading of the code reveals that:
+
 * we are dealing with an Ackermann _mod-n_ variant, so we max out the recursion at 32768
 * meaning that we can memoize all sorts of results, and the max size of the table is reasonable
-* traslating the assembly above: r0 == m, and r1 == n
+* traslating the assembly above: r0 == m, and r1 == n, *not* as stated above
 * so that leaves r7 as ... what, exactly?
-* in the m &gt; 1, n == 0 case, n is being set to r7, instead of its usual 1
+* in the m &gt; 1, n == 0 case, n is being set to r7, instead of its usual 1, so that's what r7 is doing
 * this means that we're always calculating the same Ackermann function: A(4, 1)
 * but, the algorithm in one part of the three cases is non-standard -- at line *6042*
 
 The goal is to find an r7 such that *A(4, 1)* == 6.
 
-To figure that out, I wrote a more standard-form Ackermann function, with memoization, that steps though all values from [0, 32768]. There is only one result, and it is when *r7 == 25734*.
+To figure that out, I wrote a more standard-form Ackermann function, with memoization, that steps though all values from [0, 32768], again in C. There is only one result, and it is when *r7 == 25734*.
 
 The sequence of operations is:
 * break before the call to 6027 is made
@@ -104,14 +105,16 @@ To facilitate exploring the VM, the debugger has the following functions:
 * *set*: set register to a given value
 
 ## Floor puzzle
-This is manageable by hand, I imagine, but I'm lazy, so I implemented a breadth-first search for it, since the shortest solution is required -- not just any solution.
+The parameters for this are clear, even without the journal. The journal's singular contribution is to emphasize that the *shortest* solution is required -- not just *any* solution. 
+
+Consequently, I implemented a breadth-first search for it.
 
 Tweaks include:
 * memoization of state so as to not revisit the same location with the same total (any solution past that would be longer than optimal); this solves the performance problem, for the most part
 * revisiting the start location resets the puzzle, so weight it with 0
 * entering the vault location resets the puzzle if the solution is incorrect, so any solution must both end there and not revisit the spot
 
-At the end, the solution is 12 moves long.
+At the end, the solution is 12 moves long and takes about a half minute to complete; that's longer than I'd like, but that's ok.
 
 The final code is mirror-reversed, but largely made up of symmetrical letters, except for a 'p', which becomes a 'q'.
 
