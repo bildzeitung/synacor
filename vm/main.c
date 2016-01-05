@@ -8,7 +8,7 @@
 #include "vm.h"
 
 const char *argp_program_version = "main 0.1";
-const char *argp_program_bug_address = "dklein@lakeheadu.ca";
+const char *argp_program_bug_address = "bildzeitung@gmail.com";
 
 static char doc[] = "Synacor Machine Client";
 static char args_doc[] = "image"; 

@@ -301,7 +301,7 @@ int start_vm(FILE* inscript) {
             case 18:    // ret
                 if (!head) {
                     printf("RET failed on empty stack\n");
-                    exit(0);
+                    exit(1);
                 }
                 item = head->prev;
                 pc = item->value;
