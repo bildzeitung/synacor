@@ -13,11 +13,7 @@ int memo[M+1][MOD_N];
 int z;
 
 int ackermann(int m, int n) {
-    //printf("ACK: %d %d\n", m, n);
-
-    if (memo[m][n] > -1) {
-        return memo[m][n];
-    }
+    if (memo[m][n] > -1) return memo[m][n];
 
     if (!m) {
         memo[m][n] = (n + 1) % MOD_N;
